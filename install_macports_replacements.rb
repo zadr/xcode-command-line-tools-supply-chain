@@ -3,20 +3,25 @@
 
 require 'json'
 require 'open3'
+require 'open-uri'
 require 'optparse'
 require 'set'
 
-INVENTORY_FILE = File.join(__dir__, 'xcode_clt_tools.json')
+INVENTORY_LOCAL = __dir__ ? File.join(__dir__, 'xcode_clt_tools.json') : nil
+INVENTORY_URL = 'https://raw.githubusercontent.com/zadr/xcode-cli-supply-chain/main/xcode_clt_tools.json'
 COL_WIDTHS = [16, 18, 36, 14].freeze
 ROW_FMT = "%-#{COL_WIDTHS[0]}s %-#{COL_WIDTHS[1]}s %-#{COL_WIDTHS[2]}s %s"
 WRAP_OFFSET = 5 + COL_WIDTHS[0] + COL_WIDTHS[1] + 2
 
 def load_inventory
-  JSON.parse(File.read(INVENTORY_FILE))
-rescue Errno::ENOENT
-  abort "Error: #{INVENTORY_FILE} not found."
+  data = if INVENTORY_LOCAL && File.exist?(INVENTORY_LOCAL)
+           File.read(INVENTORY_LOCAL)
+         else
+           URI.parse(INVENTORY_URL).open.read
+         end
+  JSON.parse(data)
 rescue JSON::ParserError => e
-  abort "Error: Failed to parse #{INVENTORY_FILE}: #{e.message}"
+  abort "Error: Failed to parse inventory: #{e.message}"
 end
 
 def needs_sudo?
@@ -53,12 +58,11 @@ def parse_port_info_output(output)
   versions = {}
   current_version = nil
   output.lines.each do |line|
-    if (m = line.match(/^version:\s*(\S+)/))
-      current_version = m[1]
-    elsif (m = line.match(/^name:\s*(\S+)/)) && current_version
-      versions[m[1]] = current_version
-      current_version = nil
-    end
+    current_version = Regexp.last_match(1) if line.match(/^version:\s*(\S+)/)
+    next unless (m = line.match(/^name:\s*(\S+)/)) && current_version
+
+    versions[m[1]] = current_version
+    current_version = nil
   end
   versions
 end
