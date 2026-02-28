@@ -9,6 +9,11 @@ require 'set'
 
 INVENTORY_LOCAL = __dir__ ? File.join(__dir__, 'xcode_clt_tools.json') : nil
 INVENTORY_URL = 'https://raw.githubusercontent.com/zadr/xcode-cli-supply-chain/main/xcode_clt_tools.json'
+MACPORTS_DEFAULT_BIN = '/opt/local/bin'
+
+# MacPorts may not be on PATH if the shell profile hasn't been sourced (e.g. curl | ruby).
+# Prepend the default MacPorts bin directory so subprocesses can find `port`.
+ENV['PATH'] = "#{MACPORTS_DEFAULT_BIN}:#{ENV['PATH']}" unless ENV['PATH'].split(':').include?(MACPORTS_DEFAULT_BIN)
 COL_WIDTHS = [16, 18, 36, 14].freeze
 ROW_FMT = "%-#{COL_WIDTHS[0]}s %-#{COL_WIDTHS[1]}s %-#{COL_WIDTHS[2]}s %s"
 WRAP_OFFSET = 5 + COL_WIDTHS[0] + COL_WIDTHS[1] + 2
@@ -151,8 +156,13 @@ def verify_environment(inventory)
   clt_path = inventory.dig('metadata', 'xcode_clt_path')
   abort "Error: Xcode CLT path not found at #{clt_path}." unless clt_path && Dir.exist?(clt_path)
 
-  _, port_status = Open3.capture2('port', 'version')
-  abort "Error: MacPorts 'port' command not found. Install MacPorts first." unless port_status.success?
+  begin
+    _, port_status = Open3.capture2('port', 'version')
+    port_ok = port_status.success?
+  rescue Errno::ENOENT
+    port_ok = false
+  end
+  abort "Error: MacPorts 'port' command not found. Install MacPorts first." unless port_ok
 
   puts "Xcode CLT path: #{clt_path}"
   puts "Tools in inventory: #{inventory['tools'].size}"
