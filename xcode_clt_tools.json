@@ -1,0 +1,220 @@
+{
+  "metadata": {
+    "description": "Xcode Command Line Tools inventory with MacPorts replacements",
+    "xcode_clt_path": "/Library/Developer/CommandLineTools/usr/bin",
+    "generated_from": "Xcode CLT installed at /Library/Developer/CommandLineTools",
+    "purpose": "Replace Apple-provided CLI tools with version-controlled MacPorts equivalents"
+  },
+  "tools": [
+    {
+      "name": "git",
+      "xcode_binary": "git",
+      "xcode_version": "2.50.1 (Apple Git-155)",
+      "macports_port": "git",
+      "macports_binaries": ["git"],
+      "category": "vcs",
+      "notes": "Includes git-receive-pack, git-shell, git-upload-archive, git-upload-pack"
+    },
+    {
+      "name": "make",
+      "xcode_binary": "make",
+      "xcode_version": "3.81",
+      "macports_port": "gmake",
+      "macports_binaries": ["gmake"],
+      "category": "build",
+      "notes": "Apple ships ancient GNU Make 3.81. MacPorts provides 4.x as 'gmake'. Also available as 'gnumake' in CLT."
+    },
+    {
+      "name": "bison",
+      "xcode_binary": "bison",
+      "xcode_version": "2.3",
+      "macports_port": "bison",
+      "macports_binaries": ["bison"],
+      "category": "parser",
+      "notes": "Apple ships very old bison 2.3 (GPLv2). MacPorts provides 3.x."
+    },
+    {
+      "name": "flex",
+      "xcode_binary": "flex",
+      "xcode_version": "2.6.4 Apple(flex-35)",
+      "macports_port": "flex",
+      "macports_binaries": ["flex"],
+      "category": "parser",
+      "notes": "Also provides flex++ and lex"
+    },
+    {
+      "name": "m4",
+      "xcode_binary": "m4",
+      "xcode_version": "1.4.6",
+      "macports_port": "m4",
+      "macports_binaries": ["gm4"],
+      "category": "preprocessor",
+      "notes": "Apple ships old 1.4.6. MacPorts provides 1.4.20+. Also available as gm4/bm4 in CLT."
+    },
+    {
+      "name": "gperf",
+      "xcode_binary": "gperf",
+      "xcode_version": "3.0.3",
+      "macports_port": "gperf",
+      "macports_binaries": ["gperf"],
+      "category": "devel",
+      "notes": "Perfect hash function generator"
+    },
+    {
+      "name": "python3",
+      "xcode_binary": "python3",
+      "xcode_version": "3.9.6",
+      "macports_port": "python313",
+      "macports_binaries": ["python3.13"],
+      "category": "lang",
+      "notes": "Apple ships old Python 3.9. MacPorts provides current 3.13. Also installs pip3."
+    },
+    {
+      "name": "clang",
+      "xcode_binary": "clang",
+      "xcode_version": "Apple clang 17.0.0 (clang-1700.6.3.2)",
+      "macports_port": "clang-21",
+      "macports_binaries": ["clang-mp-21", "clang++-mp-21"],
+      "category": "compiler",
+      "notes": "Upstream LLVM/Clang. Also installs clang-format, clangd, etc. Apple clang version numbers don't match upstream."
+    },
+    {
+      "name": "llvm",
+      "xcode_binary": "llvm-cov",
+      "xcode_version": "bundled with Apple clang 17.0.0",
+      "macports_port": "llvm-21",
+      "macports_binaries": ["llvm-cov-mp-21", "llvm-nm-mp-21", "llvm-objdump-mp-21", "llvm-profdata-mp-21", "llvm-size-mp-21", "llvm-cxxfilt-mp-21", "llvm-dwarfdump-mp-21"],
+      "category": "toolchain",
+      "notes": "Covers llvm-cov, llvm-nm, llvm-objdump, llvm-profdata, llvm-size, llvm-cxxfilt, llvm-dwarfdump"
+    },
+    {
+      "name": "gcc",
+      "xcode_binary": "gcc",
+      "xcode_version": "Apple clang masquerading as gcc",
+      "macports_port": "gcc14",
+      "macports_binaries": ["gcc-mp-14", "g++-mp-14"],
+      "category": "compiler",
+      "notes": "Apple's 'gcc' is actually clang. MacPorts provides real GCC. Also available: gcc15."
+    },
+    {
+      "name": "ctags",
+      "xcode_binary": "ctags",
+      "xcode_version": "BSD ctags",
+      "macports_port": "universal-ctags",
+      "macports_binaries": ["uctags"],
+      "category": "devel",
+      "notes": "Apple ships old BSD ctags. Universal Ctags is the actively maintained successor to Exuberant Ctags."
+    },
+    {
+      "name": "libtool",
+      "xcode_binary": "libtool",
+      "xcode_version": "Apple libtool",
+      "macports_port": "libtool",
+      "macports_binaries": ["glibtool", "glibtoolize"],
+      "category": "build",
+      "notes": "Apple libtool is NOT GNU libtool. MacPorts installs as glibtool to avoid conflict."
+    },
+    {
+      "name": "byacc",
+      "xcode_binary": "yacc",
+      "xcode_version": "BSD yacc",
+      "macports_port": "byacc",
+      "macports_binaries": ["byacc"],
+      "category": "parser",
+      "notes": "Berkeley Yacc. CLT also ships yacc pointing to the same tool."
+    },
+    {
+      "name": "unifdef",
+      "xcode_binary": "unifdef",
+      "xcode_version": "bundled",
+      "macports_port": "unifdef",
+      "macports_binaries": ["unifdef"],
+      "category": "preprocessor",
+      "notes": "Remove preprocessor conditionals from code"
+    },
+    {
+      "name": "binutils",
+      "xcode_binary": "ar",
+      "xcode_version": "Apple ar",
+      "macports_port": "binutils",
+      "macports_binaries": ["gar", "gnm", "gstrip", "granlib", "gobjdump", "gstrings"],
+      "category": "toolchain",
+      "notes": "GNU binutils. Covers ar, nm, strip, ranlib, objdump, strings. Prefixed with 'g' to avoid conflicts."
+    },
+    {
+      "name": "cctools",
+      "xcode_binary": "lipo",
+      "xcode_version": "Apple cctools",
+      "macports_port": "cctools",
+      "macports_binaries": ["lipo"],
+      "category": "toolchain",
+      "notes": "Apple cctools: lipo, install_name_tool, etc. MacPorts port is a rebuild from Apple open source."
+    },
+    {
+      "name": "dsymutil",
+      "xcode_binary": "dsymutil",
+      "xcode_version": "bundled with Apple clang",
+      "macports_port": "llvm-21",
+      "macports_binaries": ["dsymutil-mp-21"],
+      "category": "debug",
+      "notes": "Provided by the llvm-21 port as dsymutil-mp-21. No standalone port exists."
+    },
+    {
+      "name": "lldb",
+      "xcode_binary": "lldb",
+      "xcode_version": "bundled with Apple dev tools",
+      "macports_port": "lldb-21",
+      "macports_binaries": ["lldb-mp-21"],
+      "category": "debug",
+      "notes": "LLVM native debugger. Depends on llvm-21 and clang-21."
+    },
+    {
+      "name": "swift",
+      "xcode_binary": "swift",
+      "xcode_version": "6.2.3",
+      "macports_port": null,
+      "macports_binaries": [],
+      "category": "lang",
+      "notes": "No MacPorts port. Swift toolchains are available from swift.org as standalone downloads."
+    },
+    {
+      "name": "ld",
+      "xcode_binary": "ld",
+      "xcode_version": "ld-1230.1",
+      "macports_port": "mold",
+      "macports_binaries": ["mold"],
+      "category": "linker",
+      "notes": "mold is a faster drop-in replacement for Unix linkers. ld-classic also available in CLT."
+    }
+  ],
+  "skipped_tools": {
+    "description": "CLT binaries intentionally excluded from this inventory",
+    "apple_specific": [
+      "codesign_allocate", "codesign_allocate-p", "bitcode_strip", "cmpdylib",
+      "ctf_insert", "install_name_tool", "lorder", "mig", "nmedit", "pagestuff",
+      "segedit", "unwinddump", "vtool", "cache-build-session"
+    ],
+    "symlinks_or_aliases": [
+      "c++", "c89", "c99", "cc", "cpp", "g++", "gcc", "gcov",
+      "flex++", "lex", "yacc", "gm4", "bm4", "gnumake",
+      "nm-classic", "otool-classic", "size-classic",
+      "llvm-otool", "llvm-readtapi", "readtapi", "tapi", "tapi-analyze"
+    ],
+    "header_doc": [
+      "gatherheaderdoc", "headerdoc2html", "hdxml2manxml", "xml2man"
+    ],
+    "swift_ecosystem": [
+      "swift-api-digester", "swift-build", "swift-cache-tool", "swift-demangle",
+      "swift-driver", "swift-experimental-sdk", "swift-format", "swift-frontend",
+      "swift-help", "swift-package", "swift-package-collection",
+      "swift-package-registry", "swift-plugin-server", "swift-run", "swift-sdk",
+      "swift-stdlib-tool", "swift-symbolgraph-extract", "swift-synthesize-interface",
+      "swift-test", "swiftc", "sourcekit-lsp"
+    ],
+    "cross_compilation_configs": [
+      "aarch64-swift-linux-musl-clang.cfg", "aarch64-swift-linux-musl-clang++.cfg",
+      "x86_64-swift-linux-musl-clang.cfg", "x86_64-swift-linux-musl-clang++.cfg"
+    ],
+    "reason": "These are Apple-platform-specific, symlinks/aliases to other tools, or part of ecosystems (Swift, HeaderDoc) that cannot be meaningfully replaced via MacPorts."
+  }
+}
