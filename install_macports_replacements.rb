@@ -9,11 +9,24 @@ require 'set'
 
 INVENTORY_LOCAL = __dir__ ? File.join(__dir__, 'xcode_clt_tools.json') : nil
 INVENTORY_URL = 'https://raw.githubusercontent.com/zadr/xcode-cli-supply-chain/main/xcode_clt_tools.json'
-MACPORTS_DEFAULT_BIN = '/opt/local/bin'
+PACKAGE_MANAGERS = [
+  { id: :macports, name: 'MacPorts', bin_name: 'port',
+    default_bin_dirs: ['/opt/local/bin'],
+    pkg_key: 'macports_port', needs_sudo: true,
+    install_label: 'MacPorts  (macports.org)' },
+  { id: :homebrew, name: 'Homebrew', bin_name: 'brew',
+    default_bin_dirs: ['/opt/homebrew/bin', '/usr/local/bin'],
+    pkg_key: 'homebrew_formula', needs_sudo: false,
+    install_label: 'Homebrew  (brew.sh)' }
+].freeze
 
-# MacPorts may not be on PATH if the shell profile hasn't been sourced (e.g. curl | ruby).
-# Prepend the default MacPorts bin directory so subprocesses can find `port`.
-ENV['PATH'] = "#{MACPORTS_DEFAULT_BIN}:#{ENV['PATH']}" unless ENV['PATH'].split(':').include?(MACPORTS_DEFAULT_BIN)
+# When invoked via curl | ruby the shell profile hasn't been sourced.
+# Prepend each PM's default bin dir so `which` and Open3 calls can find them.
+PACKAGE_MANAGERS.each do |pm|
+  pm[:default_bin_dirs].each do |dir|
+    ENV['PATH'] = "#{dir}:#{ENV['PATH']}" unless ENV['PATH'].split(':').include?(dir)
+  end
+end
 COL_WIDTHS = [16, 18, 36, 14].freeze
 ROW_FMT = "%-#{COL_WIDTHS[0]}s %-#{COL_WIDTHS[1]}s %-#{COL_WIDTHS[2]}s %s"
 WRAP_OFFSET = 5 + COL_WIDTHS[0] + COL_WIDTHS[1] + 2
