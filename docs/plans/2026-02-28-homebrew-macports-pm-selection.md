@@ -361,6 +361,8 @@ git commit -m "feat: add Homebrew and MacPorts installer methods"
 **Files:**
 - Modify: `install_macports_replacements.rb` (add after the installer methods)
 
+**Note on ordering:** MacPorts is listed first in `PACKAGE_MANAGERS` (Task 2). The arrow-key menu starts with index 0 highlighted, so MacPorts is always the default/pre-selected option in both "choose between installed PMs" and "choose which PM to install" menus. Do not reorder the `PACKAGE_MANAGERS` array.
+
 **Step 1: Add `install_package_manager` and `resolve_package_manager`**
 
 ```ruby
@@ -388,12 +390,15 @@ def resolve_package_manager(options)
     puts "Using #{pm[:name]}."
     pm
   when 2
+    # MacPorts is the recommended default — it appears first in PACKAGE_MANAGERS
+    # and therefore starts highlighted in the menu.
     labels = available.map { |p| p[:install_label] }
     idx = select_with_arrows('Select a package manager:', labels)
     puts
     available[idx]
   else
     # Neither installed — ask which to install.
+    # MacPorts is the recommended default and starts highlighted (index 0).
     labels = PACKAGE_MANAGERS.map { |p| p[:install_label] }
     puts 'No package manager found.'
     idx = select_with_arrows('Select one to install:', labels)
