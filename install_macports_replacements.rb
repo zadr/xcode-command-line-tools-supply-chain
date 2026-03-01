@@ -10,7 +10,7 @@ require 'set'
 require 'tmpdir'
 
 INVENTORY_LOCAL = __dir__ ? File.join(__dir__, 'xcode_clt_tools.json') : nil
-INVENTORY_URL = 'https://raw.githubusercontent.com/zadr/xcode-cli-supply-chain/main/xcode_clt_tools.json'
+INVENTORY_URL = 'https://raw.githubusercontent.com/SamTheGeek/xcode-command-line-tools-supply-chain/samthegeek/making-coffee/xcode_clt_tools.json'
 PACKAGE_MANAGERS = [
   { id: :macports, name: 'MacPorts', bin_name: 'port',
     default_bin_dirs: ['/opt/local/bin'],
