@@ -378,45 +378,31 @@ def parse_options
   options
 end
 
-def xcode_clt_pkg_label
-  flag = '/tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress'
-  system('touch', flag)
-  out, = Open3.capture2('softwareupdate', '-l')
-  out.lines.map(&:strip).map { |l|
-    next Regexp.last_match(1).strip if l =~ /Label:\s*(Command Line Tools.*)/
-    next l.sub(/^\*\s*/, '').strip  if l =~ /^\*\s*Command Line Tools/
-  }.compact.first
-ensure
-  File.delete(flag) if File.exist?(flag)
-end
-
-def ensure_clt_selected
-  out, status = Open3.capture2('xcode-select', '-p')
-  return if status.success? && out.strip.start_with?('/Library/Developer/CommandLineTools')
-
-  system('sudo', 'xcode-select', '--switch', '/Library/Developer/CommandLineTools')
+def wait_for_xcode_clt(clt_bin)
+  print 'Waiting for Xcode CLT installation to complete'
+  until Dir.exist?(clt_bin)
+    print '.'
+    $stdout.flush
+    sleep 5
+  end
+  puts
 end
 
 def install_xcode_clt(dry_run:)
   clt_bin = '/Library/Developer/CommandLineTools/usr/bin'
   if Dir.exist?(clt_bin)
     puts 'Xcode Command Line Tools already installed.'
-    ensure_clt_selected unless dry_run
     return
   end
-
-  label = xcode_clt_pkg_label
-  abort 'Error: Could not locate Xcode CLT package via softwareupdate.' unless label
 
   if dry_run
-    puts "  [dry-run] sudo softwareupdate --install '#{label}' --agree-to-license"
+    puts '  [dry-run] xcode-select --install'
     return
   end
 
-  puts "Installing #{label}..."
-  abort 'Error: Xcode CLT installation failed.' unless
-    system('sudo', 'softwareupdate', '--install', label, '--agree-to-license')
-  ensure_clt_selected
+  puts 'Installing Xcode Command Line Tools...'
+  system('xcode-select', '--install')
+  wait_for_xcode_clt(clt_bin)
 end
 
 def verify_xcode_clt(inventory, dry_run:)
