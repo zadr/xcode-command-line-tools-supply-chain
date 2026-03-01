@@ -374,7 +374,11 @@ end
 
 def verify_xcode_clt(inventory)
   clt_path = inventory.dig('metadata', 'xcode_clt_path')
-  abort "Error: Xcode CLT path not found at #{clt_path}." unless clt_path && Dir.exist?(clt_path)
+  unless clt_path && Dir.exist?(clt_path)
+    puts "Note: Xcode CLT not found — proceeding to install replacements."
+    puts
+    return
+  end
 
   puts "Xcode CLT path: #{clt_path}"
   puts "Tools in inventory: #{inventory['tools'].size}"
