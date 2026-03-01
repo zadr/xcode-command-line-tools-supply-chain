@@ -372,25 +372,17 @@ def parse_options
   options
 end
 
-def verify_environment(inventory)
+def verify_xcode_clt(inventory)
   clt_path = inventory.dig('metadata', 'xcode_clt_path')
   abort "Error: Xcode CLT path not found at #{clt_path}." unless clt_path && Dir.exist?(clt_path)
-
-  begin
-    _, port_status = Open3.capture2('port', 'version')
-    port_ok = port_status.success?
-  rescue Errno::ENOENT
-    port_ok = false
-  end
-  abort "Error: MacPorts 'port' command not found. Install MacPorts first." unless port_ok
 
   puts "Xcode CLT path: #{clt_path}"
   puts "Tools in inventory: #{inventory['tools'].size}"
   puts
 end
 
-def filter_tools(tools, options)
-  installable = tools.select { |t| t['macports_port'] }
+def filter_tools(tools, options, pm)
+  installable = tools.select { |t| t[pm[:pkg_key]] }
   installable = installable.select { |t| options[:tools].include?(t['name']) } if options[:tools]
   installable = installable.reject { |t| options[:skip].include?(t['name']) } unless options[:skip].empty?
   installable
@@ -413,12 +405,15 @@ def do_install(installable, options, pm)
 end
 
 def main
-  options = parse_options
+  options   = parse_options
   inventory = load_inventory
-  verify_environment(inventory)
+  verify_xcode_clt(inventory)
 
-  installable = filter_tools(inventory['tools'], options)
-  print_tool_table(installable)
+  pm = resolve_package_manager(options)
+  puts
+
+  installable = filter_tools(inventory['tools'], options, pm)
+  print_tool_table(installable, pm)
   return if options[:list_only]
 
   abort 'Nothing to install.' if installable.empty?
@@ -426,7 +421,7 @@ def main
   puts
   abort 'Aborted.' unless confirm_install(options)
 
-  do_install(installable, options)
+  do_install(installable, options, pm)
 end
 
 main
