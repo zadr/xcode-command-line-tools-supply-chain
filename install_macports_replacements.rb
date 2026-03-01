@@ -271,6 +271,8 @@ def installed_pkg_set(pm)
 
     output.lines.each_with_object(Set.new) { |line, set| set.add(line.strip) }
   end
+rescue Errno::ENOENT
+  Set.new
 end
 
 def pkg_versions(pm, pkg_names)
@@ -299,6 +301,8 @@ def pkg_versions(pm, pkg_names)
       h[parts[0]] = parts[1] if parts.size >= 2
     end
   end
+rescue Errno::ENOENT
+  {}
 end
 
 def append_word(lines, word, width)
