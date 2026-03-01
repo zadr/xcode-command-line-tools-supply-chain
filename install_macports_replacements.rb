@@ -230,23 +230,25 @@ rescue JSON::ParserError => e
   abort "Error: Failed to parse inventory: #{e.message}"
 end
 
-def needs_sudo?
-  return @needs_sudo unless @needs_sudo.nil?
+def needs_sudo_for?(pm)
+  return false unless pm[:needs_sudo]
 
-  port_bin = Open3.capture2('which', 'port').first.strip
-  prefix = File.dirname(File.dirname(port_bin))
-  @needs_sudo = !File.writable?(prefix)
+  prefix = File.dirname(File.dirname(pm[:bin]))
+  !File.writable?(prefix)
 end
 
-def run_port_install(ports, dry_run:)
-  port_args = ['port', '-N', 'install']
-  cmd = needs_sudo? ? ['sudo', *port_args, *ports] : [*port_args, *ports]
+def run_install(pm, pkgs, dry_run:)
+  cmd = if pm[:id] == :macports
+          base = [pm[:bin], '-N', 'install']
+          needs_sudo_for?(pm) ? ['sudo', *base, *pkgs] : [*base, *pkgs]
+        else
+          [pm[:bin], 'install', *pkgs]
+        end
 
   if dry_run
     puts "  [dry-run] #{cmd.join(' ')}"
     return true
   end
-
   system(*cmd)
 end
 
@@ -401,15 +403,13 @@ def confirm_install(options)
   $stdin.gets&.strip&.match?(/\Ay(es)?\z/i)
 end
 
-def do_install(installable, options)
-  ports = installable.map { |t| t['macports_port'] }.uniq
-
+def do_install(installable, options, pm)
+  pkgs = installable.map { |t| t[pm[:pkg_key]] }.uniq
   puts
-  success = run_port_install(ports, dry_run: options[:dry_run])
-
+  success = run_install(pm, pkgs, dry_run: options[:dry_run])
   puts
   puts '---'
-  puts success ? "Installed #{ports.size} port(s)." : 'port install failed.'
+  puts success ? "Installed #{pkgs.size} package(s)." : "#{pm[:name]} install failed."
 end
 
 def main
