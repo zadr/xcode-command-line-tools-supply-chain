@@ -378,10 +378,37 @@ def parse_options
   options
 end
 
-def verify_xcode_clt(inventory)
+def xcode_clt_pkg_label
+  flag = '/tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress'
+  system('touch', flag)
+  out, = Open3.capture2('softwareupdate', '-l')
+  out.lines.map(&:strip).map { |l|
+    next Regexp.last_match(1).strip if l =~ /Label:\s*(Command Line Tools.*)/
+    next l.sub(/^\*\s*/, '').strip  if l =~ /^\*\s*Command Line Tools/
+  }.compact.first
+ensure
+  File.delete(flag) if File.exist?(flag)
+end
+
+def install_xcode_clt(dry_run:)
+  label = xcode_clt_pkg_label
+  abort 'Error: Could not locate Xcode CLT package via softwareupdate.' unless label
+
+  if dry_run
+    puts "  [dry-run] sudo softwareupdate --install '#{label}' --agree-to-license"
+    return
+  end
+
+  puts "Installing #{label}..."
+  abort 'Error: Xcode CLT installation failed.' unless
+    system('sudo', 'softwareupdate', '--install', label, '--agree-to-license')
+end
+
+def verify_xcode_clt(inventory, dry_run:)
   clt_path = inventory.dig('metadata', 'xcode_clt_path')
   unless clt_path && Dir.exist?(clt_path)
-    puts "Note: Xcode CLT not found — proceeding to install replacements."
+    puts 'Xcode Command Line Tools not found — installing...'
+    install_xcode_clt(dry_run: dry_run)
     puts
     return
   end
@@ -417,7 +444,7 @@ end
 def main
   options   = parse_options
   inventory = load_inventory
-  verify_xcode_clt(inventory)
+  verify_xcode_clt(inventory, dry_run: options[:dry_run])
 
   pm = resolve_package_manager(options)
   puts
