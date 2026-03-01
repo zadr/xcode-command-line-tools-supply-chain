@@ -390,7 +390,21 @@ ensure
   File.delete(flag) if File.exist?(flag)
 end
 
+def ensure_clt_selected
+  out, status = Open3.capture2('xcode-select', '-p')
+  return if status.success? && out.strip.start_with?('/Library/Developer/CommandLineTools')
+
+  system('sudo', 'xcode-select', '--switch', '/Library/Developer/CommandLineTools')
+end
+
 def install_xcode_clt(dry_run:)
+  clt_bin = '/Library/Developer/CommandLineTools/usr/bin'
+  if Dir.exist?(clt_bin)
+    puts 'Xcode Command Line Tools already installed.'
+    ensure_clt_selected unless dry_run
+    return
+  end
+
   label = xcode_clt_pkg_label
   abort 'Error: Could not locate Xcode CLT package via softwareupdate.' unless label
 
@@ -402,6 +416,7 @@ def install_xcode_clt(dry_run:)
   puts "Installing #{label}..."
   abort 'Error: Xcode CLT installation failed.' unless
     system('sudo', 'softwareupdate', '--install', label, '--agree-to-license')
+  ensure_clt_selected
 end
 
 def verify_xcode_clt(inventory, dry_run:)
