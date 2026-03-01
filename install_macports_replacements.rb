@@ -49,10 +49,10 @@ rescue Errno::ENOENT
 end
 
 def detect_available_pms
-  PACKAGE_MANAGERS.filter_map do |pm|
+  PACKAGE_MANAGERS.map { |pm|
     bin = find_pm_binary(pm)
     bin ? pm.merge(bin: bin) : nil
-  end
+  }.compact
 end
 
 def read_key
