@@ -88,17 +88,17 @@ def arrow_key_menu(prompt, labels)
   begin
     $stdin.raw do
       loop do
-        $stdout.print("\e[#{line_count}A") unless first # move up to redraw
+        $stdout.print("\e[#{line_count}A\r") unless first # move up to col 0 to redraw
         lines = render_menu_lines(prompt, labels, selected)
         line_count = lines.size
-        puts lines
+        $stdout.print(lines.join("\r\n") + "\r\n") # explicit CR+LF: raw mode disables OPOST
         first = false
 
         case read_key
         when "\e[A", "\e[D" then selected = (selected - 1) % labels.size # up/left
         when "\e[B", "\e[C" then selected = (selected + 1) % labels.size # down/right
         when "\r", "\n"     then break
-        when "\u0003"       then puts; exit(1) # Ctrl+C
+        when "\u0003"       then $stdout.print("\r\n"); exit(1) # Ctrl+C
         end
       end
     end
