@@ -132,8 +132,7 @@ def install_homebrew(dry_run:)
     puts "  [dry-run] #{cmd}"
     return
   end
-  system('/bin/bash', '-c',
-         '$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)')
+  system(cmd)
 end
 
 def macos_major_version
