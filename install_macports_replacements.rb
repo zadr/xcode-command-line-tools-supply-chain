@@ -171,10 +171,8 @@ def install_macports(dry_run:)
   end
 
   puts "Downloading #{File.basename(url)}..."
-  system('curl', '-fsSL', url, '-o', pkg)
-  abort 'Error: MacPorts download failed.' unless $?.success?
-  system('sudo', 'installer', '-pkg', pkg, '-target', '/')
-  abort 'Error: MacPorts installation failed.' unless $?.success?
+  abort 'Error: MacPorts download failed.' unless system('curl', '-fsSL', url, '-o', pkg)
+  abort 'Error: MacPorts installation failed.' unless system('sudo', 'installer', '-pkg', pkg, '-target', '/')
 ensure
   File.delete(pkg) if pkg && File.exist?(pkg) && !dry_run
 end
