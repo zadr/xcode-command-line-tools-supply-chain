@@ -31,6 +31,28 @@ COL_WIDTHS = [16, 18, 36, 14].freeze
 ROW_FMT = "%-#{COL_WIDTHS[0]}s %-#{COL_WIDTHS[1]}s %-#{COL_WIDTHS[2]}s %s"
 WRAP_OFFSET = 5 + COL_WIDTHS[0] + COL_WIDTHS[1] + 2
 
+def find_pm_binary(pm)
+  # Prefer whatever is on PATH; fall back to known install locations.
+  out, status = Open3.capture2('which', pm[:bin_name])
+  path = out.strip
+  return path if status.success? && File.executable?(path)
+
+  pm[:default_bin_dirs].each do |dir|
+    full = File.join(dir, pm[:bin_name])
+    return full if File.executable?(full)
+  end
+  nil
+rescue Errno::ENOENT
+  nil
+end
+
+def detect_available_pms
+  PACKAGE_MANAGERS.filter_map do |pm|
+    bin = find_pm_binary(pm)
+    bin ? pm.merge(bin: bin) : nil
+  end
+end
+
 def load_inventory
   data = if INVENTORY_LOCAL && File.exist?(INVENTORY_LOCAL)
            File.read(INVENTORY_LOCAL)
