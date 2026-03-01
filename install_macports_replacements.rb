@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+require 'io/console'
 require 'json'
 require 'open3'
 require 'open-uri'
@@ -51,6 +52,77 @@ def detect_available_pms
     bin = find_pm_binary(pm)
     bin ? pm.merge(bin: bin) : nil
   end
+end
+
+def read_key
+  char = $stdin.getch
+  return char unless char == "\e"
+
+  # Try to read the two-byte escape sequence (arrow keys = "\e[A" etc.).
+  # Non-blocking so a bare Escape keypress doesn't hang.
+  begin
+    char += $stdin.read_nonblock(2)
+  rescue IO::WaitReadable
+    # lone Escape — return as-is
+  end
+  char
+end
+
+def render_menu_lines(prompt, labels, selected)
+  lines = [prompt.to_s]
+  labels.each_with_index do |label, i|
+    lines << (i == selected ? "  \e[1m\u25B6 #{label}\e[0m" : "    #{label}")
+  end
+  lines << ''
+  lines << "\e[2m\u2191/\u2193 to move \u00B7 Enter to select \u00B7 Ctrl+C to quit\e[0m"
+  lines
+end
+
+def arrow_key_menu(prompt, labels)
+  selected = 0
+  first = true
+  line_count = 0
+
+  $stdout.print "\e[?25l" # hide cursor
+  begin
+    $stdin.raw do
+      loop do
+        $stdout.print("\e[#{line_count}A") unless first # move up to redraw
+        lines = render_menu_lines(prompt, labels, selected)
+        line_count = lines.size
+        puts lines
+        first = false
+
+        case read_key
+        when "\e[A", "\e[D" then selected = (selected - 1) % labels.size # up/left
+        when "\e[B", "\e[C" then selected = (selected + 1) % labels.size # down/right
+        when "\r", "\n"     then break
+        when "\u0003"       then puts; exit(1) # Ctrl+C
+        end
+      end
+    end
+  ensure
+    $stdout.print "\e[?25h" # restore cursor
+  end
+  selected
+end
+
+def numbered_menu(prompt, labels)
+  puts prompt
+  labels.each_with_index { |label, i| puts "  #{i + 1}. #{label}" }
+  loop do
+    print "Enter number (1-#{labels.size}): "
+    input = $stdin.gets&.strip
+    exit(1) if input.nil?
+    n = input.to_i
+    return n - 1 if n.between?(1, labels.size)
+
+    puts "Invalid choice. Please enter 1-#{labels.size}."
+  end
+end
+
+def select_with_arrows(prompt, labels)
+  $stdout.tty? ? arrow_key_menu(prompt, labels) : numbered_menu(prompt, labels)
 end
 
 def load_inventory
