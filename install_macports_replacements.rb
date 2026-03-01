@@ -123,7 +123,7 @@ def numbered_menu(prompt, labels)
 end
 
 def select_with_arrows(prompt, labels)
-  $stdout.tty? ? arrow_key_menu(prompt, labels) : numbered_menu(prompt, labels)
+  $stdin.tty? ? arrow_key_menu(prompt, labels) : numbered_menu(prompt, labels)
 end
 
 def install_homebrew(dry_run:)
