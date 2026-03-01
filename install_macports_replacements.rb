@@ -176,6 +176,50 @@ ensure
   File.delete(pkg) if pkg && File.exist?(pkg) && !dry_run
 end
 
+def install_package_manager(pm, dry_run:)
+  puts "Installing #{pm[:name]}..."
+  if pm[:id] == :homebrew
+    install_homebrew(dry_run: dry_run)
+  else
+    install_macports(dry_run: dry_run)
+  end
+
+  # Re-detect the binary at its known path after installation.
+  bin = dry_run ? File.join(pm[:default_bin_dirs].first, pm[:bin_name]) : find_pm_binary(pm)
+  abort "Error: #{pm[:name]} binary not found after installation." unless bin || dry_run
+
+  pm.merge(bin: bin || File.join(pm[:default_bin_dirs].first, pm[:bin_name]))
+end
+
+def resolve_package_manager(options)
+  available = detect_available_pms
+
+  case available.size
+  when 1
+    pm = available.first
+    puts "Using #{pm[:name]}."
+    pm
+  when 2
+    # MacPorts is the recommended default — it appears first in PACKAGE_MANAGERS
+    # and therefore starts highlighted in the menu.
+    labels = available.map { |p| p[:install_label] }
+    idx = select_with_arrows('Select a package manager:', labels)
+    puts
+    available[idx]
+  else
+    # Neither installed — ask which to install.
+    # MacPorts is the recommended default and starts highlighted (index 0).
+    labels = PACKAGE_MANAGERS.map { |p| p[:install_label] }
+    puts 'No package manager found.'
+    idx = select_with_arrows('Select one to install:', labels)
+    puts
+    chosen = PACKAGE_MANAGERS[idx]
+    installed_pm = install_package_manager(chosen, dry_run: options[:dry_run])
+    puts "Using #{installed_pm[:name]}."
+    installed_pm
+  end
+end
+
 def load_inventory
   data = if INVENTORY_LOCAL && File.exist?(INVENTORY_LOCAL)
            File.read(INVENTORY_LOCAL)
