@@ -7,6 +7,7 @@ require 'open3'
 require 'open-uri'
 require 'optparse'
 require 'set'
+require 'tmpdir'
 
 INVENTORY_LOCAL = __dir__ ? File.join(__dir__, 'xcode_clt_tools.json') : nil
 INVENTORY_URL = 'https://raw.githubusercontent.com/zadr/xcode-cli-supply-chain/main/xcode_clt_tools.json'
@@ -123,6 +124,56 @@ end
 
 def select_with_arrows(prompt, labels)
   $stdout.tty? ? arrow_key_menu(prompt, labels) : numbered_menu(prompt, labels)
+end
+
+def install_homebrew(dry_run:)
+  cmd = '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+  if dry_run
+    puts "  [dry-run] #{cmd}"
+    return
+  end
+  system('/bin/bash', '-c',
+         '$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)')
+end
+
+def macos_major_version
+  out, = Open3.capture2('sw_vers', '-productVersion')
+  out.strip.split('.').first
+rescue Errno::ENOENT
+  nil
+end
+
+def macports_pkg_url
+  api_url = 'https://api.github.com/repos/macports/macports-base/releases/latest'
+  json = URI.parse(api_url).open('User-Agent' => 'ruby').read
+  release = JSON.parse(json)
+  major = macos_major_version
+  asset = release['assets'].find do |a|
+    a['name'].match?(/MacPorts-.*-#{Regexp.escape(major)}-.*\.pkg$/)
+  end
+  asset ? asset['browser_download_url'] : nil
+rescue StandardError => e
+  abort "Error: Could not fetch MacPorts release info: #{e.message}"
+end
+
+def install_macports(dry_run:)
+  url = macports_pkg_url
+  abort 'Error: Could not find a MacPorts .pkg for your macOS version.' unless url
+
+  pkg = File.join(Dir.tmpdir, File.basename(url))
+  if dry_run
+    puts "  [dry-run] curl -fsSL #{url} -o #{pkg}"
+    puts "  [dry-run] sudo installer -pkg #{pkg} -target /"
+    return
+  end
+
+  puts "Downloading #{File.basename(url)}..."
+  system('curl', '-fsSL', url, '-o', pkg)
+  abort 'Error: MacPorts download failed.' unless $CHILD_STATUS.success?
+  system('sudo', 'installer', '-pkg', pkg, '-target', '/')
+  abort 'Error: MacPorts installation failed.' unless $CHILD_STATUS.success?
+ensure
+  File.delete(pkg) if pkg && File.exist?(pkg) && !dry_run
 end
 
 def load_inventory
