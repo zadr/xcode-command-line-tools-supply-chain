@@ -250,34 +250,49 @@ def run_port_install(ports, dry_run:)
   system(*cmd)
 end
 
-def port_installed_set
-  output, status = Open3.capture2('port', 'installed')
-  return Set.new unless status.success?
+def installed_pkg_set(pm)
+  if pm[:id] == :macports
+    output, status = Open3.capture2(pm[:bin], 'installed')
+    return Set.new unless status.success?
 
-  output.lines.each_with_object(Set.new) do |line, set|
-    match = line.match(/^\s+(\S+)\s/)
-    set.add(match[1]) if match
+    output.lines.each_with_object(Set.new) do |line, set|
+      match = line.match(/^\s+(\S+)\s/)
+      set.add(match[1]) if match
+    end
+  else
+    output, status = Open3.capture2(pm[:bin], 'list', '--formula')
+    return Set.new unless status.success?
+
+    output.lines.each_with_object(Set.new) { |line, set| set.add(line.strip) }
   end
 end
 
-def parse_port_info_output(output)
-  versions = {}
-  current_version = nil
-  output.lines.each do |line|
-    current_version = Regexp.last_match(1) if line.match(/^version:\s*(\S+)/)
-    next unless (m = line.match(/^name:\s*(\S+)/)) && current_version
+def pkg_versions(pm, pkg_names)
+  return {} if pkg_names.empty?
 
-    versions[m[1]] = current_version
+  if pm[:id] == :macports
+    output, status = Open3.capture2(pm[:bin], 'info', '--version', '--name', *pkg_names)
+    return {} unless status.success?
+
+    versions = {}
     current_version = nil
+    output.lines.each do |line|
+      current_version = Regexp.last_match(1) if line.match(/^version:\s*(\S+)/)
+      next unless (m = line.match(/^name:\s*(\S+)/)) && current_version
+
+      versions[m[1]] = current_version
+      current_version = nil
+    end
+    versions
+  else
+    output, status = Open3.capture2(pm[:bin], 'list', '--formula', '--versions', *pkg_names)
+    return {} unless status.success?
+
+    output.lines.each_with_object({}) do |line, h|
+      parts = line.strip.split
+      h[parts[0]] = parts[1] if parts.size >= 2
+    end
   end
-  versions
-end
-
-def port_versions(port_names)
-  return {} if port_names.empty?
-
-  output, status = Open3.capture2('port', 'info', '--version', '--name', *port_names)
-  status.success? ? parse_port_info_output(output) : {}
 end
 
 def append_word(lines, word, width)
@@ -296,34 +311,36 @@ def wrap_text(text, width)
   text.split(/\s+/).each_with_object(['']) { |word, lines| append_word(lines, word, width) }
 end
 
-def print_table_header
-  puts "     #{format(ROW_FMT, 'Tool', 'MacPorts Port', 'Xcode Version', 'MacPorts Version')}"
+def print_table_header(pm)
+  pkg_col     = "#{pm[:name]} Package"
+  version_col = "#{pm[:name]} Version"
+  puts "     #{format(ROW_FMT, 'Tool', pkg_col, 'Xcode Version', version_col)}"
   puts "  #{'-' * (COL_WIDTHS.sum + 8)}"
 end
 
-def print_tool_row(tool, installed:, version:)
-  port = tool['macports_port'] || '(none)'
+def print_tool_row(tool, pm, installed:, version:)
+  pkg = tool[pm[:pkg_key]] || '(none)'
   icon = installed ? "\u2705" : "\u274C"
   xcode_lines = wrap_text(tool['xcode_version'].to_s, COL_WIDTHS[2])
 
-  puts "  #{icon} " + format(ROW_FMT, tool['name'], port, xcode_lines[0], version || '')
+  puts "  #{icon} " + format(ROW_FMT, tool['name'], pkg, xcode_lines[0], version || '')
 
   xcode_lines[1..].each do |line|
     puts (' ' * WRAP_OFFSET) + line
   end
 end
 
-def print_tool_table(tools)
-  port_names = tools.map { |t| t['macports_port'] }.compact.uniq
-  installed = port_installed_set
-  versions = port_versions(port_names)
+def print_tool_table(tools, pm)
+  pkg_names = tools.map { |t| t[pm[:pkg_key]] }.compact.uniq
+  installed  = installed_pkg_set(pm)
+  versions   = pkg_versions(pm, pkg_names)
 
-  print_table_header
+  print_table_header(pm)
   tools.each do |tool|
-    port = tool['macports_port']
-    print_tool_row(tool,
-                   installed: port && installed.include?(port),
-                   version: port && versions[port])
+    pkg = tool[pm[:pkg_key]]
+    print_tool_row(tool, pm,
+                   installed: pkg && installed.include?(pkg),
+                   version: pkg && versions[pkg])
   end
 end
 
