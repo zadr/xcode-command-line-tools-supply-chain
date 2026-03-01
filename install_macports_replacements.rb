@@ -378,31 +378,55 @@ def parse_options
   options
 end
 
-def wait_for_xcode_clt(clt_bin)
-  print 'Waiting for Xcode CLT installation to complete'
-  until Dir.exist?(clt_bin)
-    print '.'
-    $stdout.flush
-    sleep 5
-  end
-  puts
+def normalize_clt_label(label)
+  # macOS 26 (Tahoe)+ changed the format from "Xcode-{ver}" to "Xcode {ver}-{build}".
+  # Normalise back to the form softwareupdate --install expects: "Xcode-{ver}".
+  label.sub(/\bXcode\s+(\d[\d.]+)(-\S+)?$/) { "Xcode-#{Regexp.last_match(1)}" }
+end
+
+def xcode_clt_pkg_label
+  flag = '/tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress'
+  system('touch', flag)
+  out, = Open3.capture2('softwareupdate', '-l')
+  raw = out.lines.map(&:strip).map { |l|
+    next Regexp.last_match(1).strip if l =~ /Label:\s*(Command Line Tools.*)/
+    next l.sub(/^\*\s*/, '').strip  if l =~ /^\*\s*Command Line Tools/
+  }.compact.first
+  raw ? normalize_clt_label(raw) : nil
+ensure
+  File.delete(flag) if File.exist?(flag)
+end
+
+def ensure_clt_selected
+  clt = '/Library/Developer/CommandLineTools'
+  return unless Dir.exist?(clt)
+
+  out, status = Open3.capture2('xcode-select', '-p')
+  return if status.success? && out.strip.start_with?(clt)
+
+  system('sudo', 'xcode-select', '--switch', clt)
 end
 
 def install_xcode_clt(dry_run:)
   clt_bin = '/Library/Developer/CommandLineTools/usr/bin'
   if Dir.exist?(clt_bin)
     puts 'Xcode Command Line Tools already installed.'
+    ensure_clt_selected unless dry_run
     return
   end
+
+  label = xcode_clt_pkg_label
+  abort 'Error: Could not locate Xcode CLT package via softwareupdate.' unless label
 
   if dry_run
-    puts '  [dry-run] xcode-select --install'
+    puts "  [dry-run] sudo softwareupdate --install '#{label}' --agree-to-license"
     return
   end
 
-  puts 'Installing Xcode Command Line Tools...'
-  system('xcode-select', '--install')
-  wait_for_xcode_clt(clt_bin)
+  puts "Installing #{label}..."
+  abort 'Error: Xcode CLT installation failed.' unless
+    system('sudo', 'softwareupdate', '--install', label, '--agree-to-license')
+  ensure_clt_selected
 end
 
 def verify_xcode_clt(inventory, dry_run:)
