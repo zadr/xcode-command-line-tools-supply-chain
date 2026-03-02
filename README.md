@@ -1,7 +1,7 @@
 # xcode-cli-supply-chain
 
 ```
-curl -fsSL https://raw.githubusercontent.com/zadr/xcode-cli-supply-chain/main/install_macports_replacements.rb | ruby
+curl -fsSL https://raw.githubusercontent.com/zadr/xcode-command-line-tools-supply-chain/refs/heads/main/install_macports_replacements.rb | ruby
 ```
 
 Or clone and run locally:
