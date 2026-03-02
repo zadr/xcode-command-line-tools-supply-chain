@@ -385,16 +385,12 @@ def normalize_clt_label(label)
 end
 
 def xcode_clt_pkg_label
-  flag = '/tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress'
-  system('touch', flag)
   out, = Open3.capture2('softwareupdate', '-l')
   raw = out.lines.map(&:strip).map { |l|
     next Regexp.last_match(1).strip if l =~ /Label:\s*(Command Line Tools.*)/
     next l.sub(/^\*\s*/, '').strip  if l =~ /^\*\s*Command Line Tools/
   }.compact.first
   raw ? normalize_clt_label(raw) : nil
-ensure
-  File.delete(flag) if File.exist?(flag)
 end
 
 def ensure_clt_selected
@@ -415,6 +411,10 @@ def install_xcode_clt(dry_run:)
     return
   end
 
+  # Flag file must stay alive across both the -l listing and --install call.
+  flag = '/tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress'
+  system('touch', flag)
+
   label = xcode_clt_pkg_label
   abort 'Error: Could not locate Xcode CLT package via softwareupdate.' unless label
 
@@ -427,6 +427,8 @@ def install_xcode_clt(dry_run:)
   abort 'Error: Xcode CLT installation failed.' unless
     system('sudo', 'softwareupdate', '--install', label, '--agree-to-license')
   ensure_clt_selected
+ensure
+  File.delete(flag) if flag && File.exist?(flag)
 end
 
 def verify_xcode_clt(inventory, dry_run:)
